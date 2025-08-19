@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Name Merger App</title>
+  <title>Perify</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="data:application/manifest+json,{
-    &quot;name&quot;: &quot;Name Merger&quot;,
-    &quot;short_name&quot;: &quot;Merger&quot;,
+    &quot;name&quot;: &quot;Perify&quot;,
+    &quot;short_name&quot;: &quot;Perify&quot;,
     &quot;start_url&quot;: &quot;.&quot;,
     &quot;display&quot;: &quot;standalone&quot;,
     &quot;background_color&quot;: &quot;#ffffff&quot;,
@@ -20,28 +20,69 @@
     ]
   }">
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center p-6">
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
 
-  <!-- Title -->
-  <h1 class="text-3xl font-bold mb-6">🔗 Name Merger</h1>
+  <!-- Navbar -->
+  <nav class="bg-white shadow-md w-full p-4 flex justify-center space-x-6">
+    <button onclick="showPage('home')" class="text-blue-600 font-semibold">Home</button>
+    <button onclick="showPage('about')" class="text-gray-600 hover:text-blue-600">About</button>
+    <button onclick="showPage('privacy')" class="text-gray-600 hover:text-blue-600">Privacy</button>
+  </nav>
 
-  <!-- Merge Form -->
-  <div class="bg-white p-6 rounded-2xl shadow-md w-full max-w-md">
-    <h2 class="text-xl font-semibold mb-4">Merge Two Names</h2>
-    <input id="name1" type="text" placeholder="Enter first name" class="w-full p-2 border rounded mb-3">
-    <input id="name2" type="text" placeholder="Enter second name" class="w-full p-2 border rounded mb-3">
-    <button onclick="mergeNames()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Merge Names</button>
-    <p id="pairResult" class="mt-4 text-center font-bold text-xl text-purple-600"></p>
-  </div>
+  <!-- Pages -->
+  <main class="flex-1 p-6 flex flex-col items-center">
 
-  <!-- Add to Home Screen Button -->
-  <div class="mt-10">
-    <button id="installBtn" class="bg-green-500 text-white py-2 px-6 rounded-xl shadow hover:bg-green-600 hidden">
-      📲 Add to Home Screen
-    </button>
-  </div>
+    <!-- Home Page -->
+    <section id="home" class="w-full max-w-md">
+      <h1 class="text-3xl font-bold mb-6 text-center">🔗 Perify</h1>
+      <div class="bg-white p-6 rounded-2xl shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Merge Two Names</h2>
+        <input id="name1" type="text" placeholder="Enter first name" class="w-full p-2 border rounded mb-3">
+        <input id="name2" type="text" placeholder="Enter second name" class="w-full p-2 border rounded mb-3">
+        <button onclick="mergeNames()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Merge Names</button>
+        <p id="pairResult" class="mt-4 text-center font-bold text-xl text-purple-600"></p>
+
+        <!-- Copy & Share -->
+        <div class="flex justify-center space-x-4 mt-4">
+          <button onclick="copyName()" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">📋 Copy</button>
+          <button onclick="shareName()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">📤 Share</button>
+        </div>
+      </div>
+
+      <!-- Add to Home Screen -->
+      <div class="mt-10 flex justify-center">
+        <button id="installBtn" class="bg-green-500 text-white py-2 px-6 rounded-xl shadow hover:bg-green-600 hidden">
+          📲 Add to Home Screen
+        </button>
+      </div>
+    </section>
+
+    <!-- About Page -->
+    <section id="about" class="hidden max-w-2xl text-center">
+      <h2 class="text-2xl font-bold mb-4">About Perify</h2>
+      <p class="text-lg mb-4">
+        Perify is a fun tool that lets you merge two names into one unique and pronounceable new name.  
+        Whether it’s for couples, friends, or teams — Perify creates creative "ship names" you can share with the world! 💖
+      </p>
+    </section>
+
+    <!-- Privacy Policy Page -->
+    <section id="privacy" class="hidden max-w-2xl text-left">
+      <h2 class="text-2xl font-bold mb-4 text-center">Privacy Policy</h2>
+      <p class="mb-2">At Perify, your privacy is important to us. We do not collect or store any personal data.</p>
+      <p class="mb-2">Our site may display third-party ads (such as Google AdSense) that use cookies to provide personalized content.</p>
+      <p class="mb-2">By using Perify, you agree to these terms. If you have questions, please contact us.</p>
+    </section>
+
+  </main>
 
   <script>
+    // Page Switching
+    function showPage(page) {
+      document.querySelectorAll("main section").forEach(sec => sec.classList.add("hidden"));
+      document.getElementById(page).classList.remove("hidden");
+    }
+
     // Merge Names
     function mergeNames() {
       let name1 = document.getElementById("name1").value.trim();
@@ -62,6 +103,29 @@
       document.getElementById("name2").value = "";
     }
 
+    // Copy Name
+    function copyName() {
+      let result = document.getElementById("pairResult").textContent.replace("💖 ", "");
+      if (result) {
+        navigator.clipboard.writeText(result);
+        alert("Copied: " + result);
+      }
+    }
+
+    // Share Name
+    function shareName() {
+      let result = document.getElementById("pairResult").textContent.replace("💖 ", "");
+      if (result && navigator.share) {
+        navigator.share({
+          title: "Perify Name",
+          text: "Check out this merged name: " + result,
+          url: window.location.href
+        });
+      } else {
+        alert("Sharing not supported on this browser.");
+      }
+    }
+
     // Add to Home Screen
     let deferredPrompt;
     const installBtn = document.getElementById("installBtn");
@@ -75,14 +139,7 @@
     installBtn.addEventListener("click", () => {
       installBtn.style.display = "none";
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === "accepted") {
-          console.log("User accepted the install prompt");
-        } else {
-          console.log("User dismissed the install prompt");
-        }
-        deferredPrompt = null;
-      });
+      deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
     });
 
     // Inline Service Worker
@@ -90,19 +147,13 @@
       const swCode = `
         self.addEventListener('install', (e) => {
           e.waitUntil(
-            caches.open('name-merger-cache').then((cache) => {
-              return cache.addAll(['./']);
-            })
+            caches.open('perify-cache').then((cache) => cache.addAll(['./']))
           );
         });
-
         self.addEventListener('fetch', (e) => {
-          e.respondWith(
-            caches.match(e.request).then((response) => response || fetch(e.request))
-          );
+          e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
         });
       `;
-
       const blob = new Blob([swCode], { type: "application/javascript" });
       const swURL = URL.createObjectURL(blob);
       navigator.serviceWorker.register(swURL);
