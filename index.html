@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Name Merger App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="data:application/manifest+json,{
+    &quot;name&quot;: &quot;Name Merger&quot;,
+    &quot;short_name&quot;: &quot;Merger&quot;,
+    &quot;start_url&quot;: &quot;.&quot;,
+    &quot;display&quot;: &quot;standalone&quot;,
+    &quot;background_color&quot;: &quot;#ffffff&quot;,
+    &quot;theme_color&quot;: &quot;#3b82f6&quot;,
+    &quot;icons&quot;: [
+      { &quot;src&quot;: &quot;https://cdn-icons-png.flaticon.com/512/1077/1077114.png&quot;, &quot;sizes&quot;: &quot;192x192&quot;, &quot;type&quot;: &quot;image/png&quot; },
+      { &quot;src&quot;: &quot;https://cdn-icons-png.flaticon.com/512/1077/1077114.png&quot;, &quot;sizes&quot;: &quot;512x512&quot;, &quot;type&quot;: &quot;image/png&quot; }
+    ]
+  }">
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center p-6">
+
+  <!-- Title -->
+  <h1 class="text-3xl font-bold mb-6">🔗 Name Merger</h1>
+
+  <!-- Merge Form -->
+  <div class="bg-white p-6 rounded-2xl shadow-md w-full max-w-md">
+    <h2 class="text-xl font-semibold mb-4">Merge Two Names</h2>
+    <input id="name1" type="text" placeholder="Enter first name" class="w-full p-2 border rounded mb-3">
+    <input id="name2" type="text" placeholder="Enter second name" class="w-full p-2 border rounded mb-3">
+    <button onclick="mergeNames()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Merge Names</button>
+    <p id="pairResult" class="mt-4 text-center font-bold text-xl text-purple-600"></p>
+  </div>
+
+  <!-- Add to Home Screen Button -->
+  <div class="mt-10">
+    <button id="installBtn" class="bg-green-500 text-white py-2 px-6 rounded-xl shadow hover:bg-green-600 hidden">
+      📲 Add to Home Screen
+    </button>
+  </div>
+
+  <script>
+    // Merge Names
+    function mergeNames() {
+      let name1 = document.getElementById("name1").value.trim();
+      let name2 = document.getElementById("name2").value.trim();
+
+      if (!name1 || !name2) {
+        alert("Please enter both names!");
+        return;
+      }
+
+      let half1 = name1.substring(0, Math.ceil(name1.length / 2));
+      let half2 = name2.substring(Math.floor(name2.length / 2));
+      let mergedName = (half1 + half2).replace(/\s+/g, "");
+
+      document.getElementById("pairResult").textContent = "💖 " + mergedName;
+
+      document.getElementById("name1").value = "";
+      document.getElementById("name2").value = "";
+    }
+
+    // Add to Home Screen
+    let deferredPrompt;
+    const installBtn = document.getElementById("installBtn");
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = "block";
+    });
+
+    installBtn.addEventListener("click", () => {
+      installBtn.style.display = "none";
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === "accepted") {
+          console.log("User accepted the install prompt");
+        } else {
+          console.log("User dismissed the install prompt");
+        }
+        deferredPrompt = null;
+      });
+    });
+
+    // Inline Service Worker
+    if ("serviceWorker" in navigator) {
+      const swCode = `
+        self.addEventListener('install', (e) => {
+          e.waitUntil(
+            caches.open('name-merger-cache').then((cache) => {
+              return cache.addAll(['./']);
+            })
+          );
+        });
+
+        self.addEventListener('fetch', (e) => {
+          e.respondWith(
+            caches.match(e.request).then((response) => response || fetch(e.request))
+          );
+        });
+      `;
+
+      const blob = new Blob([swCode], { type: "application/javascript" });
+      const swURL = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swURL);
+    }
+  </script>
+</body>
+</html>
