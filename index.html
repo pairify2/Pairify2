@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Football Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans p-4">
+  <h1 class="text-3xl font-bold text-center mb-6">⚽ Football Hub</h1>
+
+  <!-- Search -->
+  <div class="mb-6">
+    <input id="search" type="text" placeholder="Search team..."
+      class="w-full p-3 rounded-xl bg-gray-800 text-white outline-none">
+  </div>
+
+  <!-- Premier League -->
+  <section class="mb-10">
+    <h2 class="text-2xl font-semibold mb-4">🏴 Premier League</h2>
+    <div id="prem-fixtures" class="space-y-4"></div>
+    <h3 class="text-xl font-semibold mt-6 mb-3">Results</h3>
+    <div id="prem-results" class="space-y-4"></div>
+    <h3 class="text-xl font-semibold mt-6 mb-3">Standings</h3>
+    <div id="prem-standings" class="overflow-x-auto"></div>
+  </section>
+
+  <!-- La Liga -->
+  <section>
+    <h2 class="text-2xl font-semibold mb-4">🇪🇸 La Liga</h2>
+    <div id="la-fixtures" class="space-y-4"></div>
+    <h3 class="text-xl font-semibold mt-6 mb-3">Results</h3>
+    <div id="la-results" class="space-y-4"></div>
+    <h3 class="text-xl font-semibold mt-6 mb-3">Standings</h3>
+    <div id="la-standings" class="overflow-x-auto"></div>
+  </section>
+
+  <script>
+    const leagues = { premier: 39, laLiga: 140 };
+
+    async function loadFixtures(leagueId, fixtureEl, resultsEl, standingsEl) {
+      // Fixtures
+      let res = await fetch(`/api/fixtures/${leagueId}`);
+      let data = await res.json();
+      fixtureEl.innerHTML = data.response.map(m => `
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <p class="font-medium">${m.teams.home.name} vs ${m.teams.away.name}</p>
+          <p class="text-sm text-gray-400">${new Date(m.fixture.date).toLocaleString()}</p>
+        </div>
+      `).join("");
+
+      // Results
+      res = await fetch(`/api/results/${leagueId}`);
+      data = await res.json();
+      resultsEl.innerHTML = data.response.map(m => `
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <p>${m.teams.home.name} ${m.goals.home} - ${m.goals.away} ${m.teams.away.name}</p>
+          <p class="text-sm text-gray-400">${new Date(m.fixture.date).toLocaleDateString()}</p>
+        </div>
+      `).join("");
+
+      // Standings
+      res = await fetch(`/api/standings/${leagueId}`);
+      data = await res.json();
+      const table = data.response[0].league.standings[0];
+      standingsEl.innerHTML = `
+        <table class="min-w-full text-sm">
+          <tr class="text-gray-400">
+            <th class="text-left p-2">#</th>
+            <th class="text-left p-2">Team</th>
+            <th class="text-right p-2">Pts</th>
+          </tr>
+          ${table.map(t => `
+            <tr>
+              <td class="p-2">${t.rank}</td>
+              <td class="p-2">${t.team.name}</td>
+              <td class="p-2 text-right">${t.points}</td>
+            </tr>
+          `).join("")}
+        </table>`;
+    }
+
+    // Init
+    loadFixtures(leagues.premier, 
+      document.getElementById("prem-fixtures"),
+      document.getElementById("prem-results"),
+      document.getElementById("prem-standings")
+    );
+    loadFixtures(leagues.laLiga, 
+      document.getElementById("la-fixtures"),
+      document.getElementById("la-results"),
+      document.getElementById("la-standings")
+    );
+
+    // Search filter
+    document.getElementById("search").addEventListener("input", e => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll("section div").forEach(div => {
+        div.style.display = div.textContent.toLowerCase().includes(q) ? "" : "none";
+      });
+    });
+  </script>
+</body>
+</html>
