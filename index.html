@@ -36,7 +36,7 @@
 
         <!-- Merge Button + Font Selector -->
         <div class="flex space-x-2">
-          <button onclick="mergeNames()" class="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600">Merge Names</button>
+          <button id="mergeBtn" class="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600">Merge Names</button>
           <select id="fontSelector" onchange="changeFont()" class="border rounded p-2 text-sm text-black">
             <option value="Roboto">Roboto</option>
             <option value="Poppins">Poppins</option>
@@ -85,6 +85,7 @@
 
   <script>
     let balance = 0;
+    let mergeClickCount = 0; // counter for merge button clicks
 
     // Page Switching
     function showPage(page) {
@@ -125,6 +126,18 @@
       document.getElementById("name1").value = "";
       document.getElementById("name2").value = "";
     }
+
+    // Merge Button Click Logic (with ad redirect every 2nd click)
+    document.getElementById("mergeBtn").addEventListener("click", function() {
+      mergeClickCount++;
+      if (mergeClickCount % 2 === 0) {
+        // 2nd, 4th, etc. click → redirect to ad
+        window.location.href = "https://www.profitableratecpm.com/g4z3b0y3x5?key=0926a8b892e8ff0d6fbecc664b7f16b0";
+      } else {
+        // 1st, 3rd, etc. click → normal merge
+        mergeNames();
+      }
+    });
 
     // Copy Name
     function copyName() {
@@ -178,5 +191,6 @@
       document.getElementById("accountNumber").value = "";
     }
   </script>
+
 </body>
 </html>
