@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Football Pro Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #suggestions div:hover { background-color: #1f2937; cursor: pointer; }
+    .active-tab { background-color: #3b82f6; color: white; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-6">
+
+  <!-- Header -->
+  <div class="flex flex-col mb-6 relative">
+    <h1 class="text-3xl font-bold mb-3">⚽ Football Dashboard</h1>
+    <input id="searchInput" type="text" placeholder="Search club or country..." 
+           class="px-4 py-2 rounded text-black w-72" autocomplete="off"/>
+    <div id="suggestions" 
+         class="absolute top-20 left-0 w-72 bg-gray-700 rounded shadow-lg hidden z-50"></div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="flex gap-4 mb-6">
+    <button id="btnLive" class="px-4 py-2 rounded bg-blue-500" onclick="loadMatches('live')">Live</button>
+    <button id="btnUpcoming" class="px-4 py-2 rounded bg-gray-700" onclick="loadMatches('upcoming')">Upcoming</button>
+    <button id="btnPast" class="px-4 py-2 rounded bg-gray-700" onclick="loadMatches('past')">Past</button>
+  </div>
+
+  <!-- Auto-Loaded Sections -->
+  <h2 class="text-2xl font-bold mb-2">🔮 Upcoming Matches</h2>
+  <div id="autoUpcoming" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6"></div>
+
+  <h2 class="text-2xl font-bold mb-2">⏮️ Recent Matches</h2>
+  <div id="autoRecent" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6"></div>
+
+  <!-- Matches Container (for Tabs/Search) -->
+  <h2 class="text-2xl font-bold mb-2">📊 Matches</h2>
+  <div id="matchContainer" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3"></div>
+
+  <!-- Match Modal -->
+  <div id="matchModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center">
+    <div class="bg-gray-800 p-6 rounded-xl w-11/12 md:w-3/4 lg:w-1/2 relative">
+      <button onclick="closeModal()" class="absolute top-2 right-2 text-red-500 font-bold">✖</button>
+      <h2 id="modalTitle" class="text-xl font-bold mb-4"></h2>
+      <div class="flex gap-4 mb-4">
+        <button onclick="showTab('overview')" class="tabBtn font-bold">Overview</button>
+        <button onclick="showTab('timeline')" class="tabBtn">Timeline</button>
+        <button onclick="showTab('stats')" class="tabBtn">Stats</button>
+        <button onclick="showTab('lineups')" class="tabBtn">Lineups</button>
+      </div>
+      <div id="tabContent" class="space-y-4"></div>
+    </div>
+  </div>
+
+<script>
+const API_KEY = "7050d2640835df4d52bb8dbfeeed2b6c";
+const BASE_URL = "https://v3.football.api-sports.io";
+
+async function fetchAPI(endpoint) {
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    headers: { "x-apisports-key": API_KEY }
+  });
+  return res.json();
+}
+
+// --- Render Matches ---
+function renderMatches(matches, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  if (!matches || matches.length === 0) {
+    container.innerHTML = "<p>No matches ⚽</p>";
+    return;
+  }
+  matches.forEach(m => {
+    const html = `
+      <div class="bg-gray-800 p-4 rounded-xl shadow-lg">
+        <div class="flex justify-between items-center mb-2">
+          <span>${m.league.name} (${m.league.country})</span>
+          <span class="text-sm text-gray-400">${m.fixture.status.long}</span>
+        </div>
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex items-center gap-2">
+            <img src="${m.teams.home.logo}" class="w-6 h-6"/> 
+            <span>${m.teams.home.name}</span>
+          </div>
+          <span class="text-lg font-bold">${m.goals.home ?? 0} - ${m.goals.away ?? 0}</span>
+          <div class="flex items-center gap-2">
+            <img src="${m.teams.away.logo}" class="w-6 h-6"/> 
+            <span>${m.teams.away.name}</span>
+          </div>
+        </div>
+        <button onclick="openMatch(${m.fixture.id}, '${m.teams.home.name} vs ${m.teams.away.name}')" 
+          class="mt-2 bg-blue-500 px-3 py-1 rounded">View Details</button>
+      </div>`;
+    container.innerHTML += html;
+  });
+}
+
+// --- Load Matches via Tabs ---
+async function loadMatches(type) {
+  let endpoint = "";
+  if (type === "live") endpoint = "/fixtures?live=all";
+  if (type === "upcoming") endpoint = "/fixtures?next=10";
+  if (type === "past") endpoint = "/fixtures?last=10";
+
+  // Highlight active
+  ["btnLive","btnUpcoming","btnPast"].forEach(id => {
+    document.getElementById(id).classList.replace("bg-blue-500","bg-gray-700");
+  });
+  if (type === "live") document.getElementById("btnLive").classList.replace("bg-gray-700","bg-blue-500");
+  if (type === "upcoming") document.getElementById("btnUpcoming").classList.replace("bg-gray-700","bg-blue-500");
+  if (type === "past") document.getElementById("btnPast").classList.replace("bg-gray-700","bg-blue-500");
+
+  const data = await fetchAPI(endpoint);
+  renderMatches(data.response, "matchContainer");
+}
+
+// --- Auto Load (Upcoming + Recent) ---
+async function loadAutoSections() {
+  const [upcoming, recent] = await Promise.all([
+    fetchAPI("/fixtures?next=10"),
+    fetchAPI("/fixtures?last=10")
+  ]);
+  renderMatches(upcoming.response, "autoUpcoming");
+  renderMatches(recent.response, "autoRecent");
+}
+
+// --- Modal ---
+let currentFixture = null;
+function closeModal(){ document.getElementById("matchModal").classList.add("hidden"); }
+async function openMatch(fixtureId, title){
+  document.getElementById("matchModal").classList.remove("hidden");
+  document.getElementById("modalTitle").innerText = title;
+  currentFixture = fixtureId; showTab("overview");
+}
+async function loadOverview(id){
+  const d = await fetchAPI(`/fixtures?id=${id}`);
+  const m = d.response[0];
+  document.getElementById("tabContent").innerHTML = `
+    <p><strong>Stadium:</strong> ${m.fixture.venue.name}, ${m.fixture.venue.city}</p>
+    <p><strong>Referee:</strong> ${m.fixture.referee ?? "N/A"}</p>
+    <p><strong>Date:</strong> ${new Date(m.fixture.date).toLocaleString()}</p>
+    <p><strong>Score:</strong> ${m.goals.home} - ${m.goals.away}</p>`;
+}
+async function loadTimeline(id){
+  const d = await fetchAPI(`/fixtures/events?fixture=${id}`);
+  let ev = d.response.map(e=> `<p>${e.time.elapsed}' - ${e.team.name}: ${e.detail}</p>`).join("");
+  document.getElementById("tabContent").innerHTML = ev || "<p>No events</p>";
+}
+async function loadStats(id){
+  const d = await fetchAPI(`/fixtures/statistics?fixture=${id}`);
+  let st = d.response[0]?.statistics.map(s=> `<p>${s.type}: ${s.value}</p>`).join("") || "<p>No stats</p>";
+  document.getElementById("tabContent").innerHTML = st;
+}
+async function loadLineups(id){
+  const d = await fetchAPI(`/fixtures/lineups?fixture=${id}`);
+  let html="";
+  if(d.response.length>0){
+    d.response.forEach(team=>{
+      html+=`<h3 class="font-bold mt-2">${team.team.name}</h3><ul>`;
+      team.startXI.forEach(p=> html+=`<li>${p.player.number} - ${p.player.name}</li>`);
+      html+="</ul>";
+    });
+  } else html="<p>No lineup</p>";
+  document.getElementById("tabContent").innerHTML=html;
+}
+function showTab(tab){
+  if(!currentFixture) return;
+  if(tab==="overview") loadOverview(currentFixture);
+  if(tab==="timeline") loadTimeline(currentFixture);
+  if(tab==="stats") loadStats(currentFixture);
+  if(tab==="lineups") loadLineups(currentFixture);
+}
+
+// --- Search ---
+const searchInput=document.getElementById("searchInput");
+const suggestionsBox=document.getElementById("suggestions");
+let debounceTimer;
+searchInput.addEventListener("input",e=>{
+  clearTimeout(debounceTimer);
+  const term=e.target.value.trim();
+  if(term.length<2){suggestionsBox.classList.add("hidden");return;}
+  debounceTimer=setTimeout(()=>loadSuggestions(term),400);
+});
+async function loadSuggestions(term){
+  const [teams,countries]=await Promise.all([
+    fetchAPI(`/teams?search=${term}`),
+    fetchAPI(`/countries?search=${term}`)
+  ]);
+  let html="";
+  teams.response.forEach(t=>{
+    html+=`<div class="px-3 py-2" onclick="selectTeam(${t.team.id},'${t.team.name}')">⚽ ${t.team.name}</div>`;
+  });
+  countries.response.forEach(c=>{
+    html+=`<div class="px-3 py-2" onclick="selectCountry('${c.name}')">🌍 ${c.name}</div>`;
+  });
+  suggestionsBox.innerHTML=html || `<div class="px-3 py-2 text-gray-400">No results</div>`;
+  suggestionsBox.classList.remove("hidden");
+}
+async function selectTeam(id,name){
+  searchInput.value=name; suggestionsBox.classList.add("hidden");
+  const d=await fetchAPI(`/fixtures?team=${id}&next=10`);
+  renderMatches(d.response,"matchContainer");
+}
+async function selectCountry(name){
+  searchInput.value=name; suggestionsBox.classList.add("hidden");
+  const d=await fetchAPI(`/fixtures?country=${name}&next=10`);
+  renderMatches(d.response,"matchContainer");
+}
+
+// --- Init ---
+loadAutoSections(); // show Upcoming + Recent by default
+loadMatches("live"); // also load live into matchContainer
+</script>
+</body>
+</html>
