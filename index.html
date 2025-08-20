@@ -15,6 +15,13 @@
       class="w-full p-3 rounded-xl bg-gray-800 text-white outline-none">
   </div>
 
+  <!-- Live Matches -->
+  <section class="mb-10">
+    <h2 class="text-2xl font-semibold mb-4">🔴 Live Matches</h2>
+    <div id="live-matches" class="space-y-4"></div>
+    <div id="match-overview" class="mt-6"></div>
+  </section>
+
   <!-- Premier League -->
   <section class="mb-10">
     <h2 class="text-2xl font-semibold mb-4">🏴 Premier League</h2>
@@ -80,6 +87,53 @@
         </table>`;
     }
 
+    // 🔴 Load Live Matches
+    async function loadLive(leagueId) {
+      let res = await fetch(`/api/live/${leagueId}`);
+      let data = await res.json();
+      const liveContainer = document.getElementById("live-matches");
+
+      if (!data.response.length) {
+        liveContainer.innerHTML = `<p class="text-gray-400">No live matches now.</p>`;
+        return;
+      }
+
+      liveContainer.innerHTML = data.response.map(m => `
+        <div onclick="loadOverview(${m.fixture.id})" class="bg-red-800 p-4 rounded-xl cursor-pointer hover:bg-red-700">
+          <p class="font-medium">${m.teams.home.name} ${m.goals.home} - ${m.goals.away} ${m.teams.away.name}</p>
+          <p class="text-sm text-gray-300">Live: ${m.fixture.status.elapsed}'</p>
+        </div>
+      `).join("");
+    }
+
+    // 🔎 Load Match Overview (events)
+    async function loadOverview(fixtureId) {
+      let res = await fetch(`/api/overview/${fixtureId}`);
+      let data = await res.json();
+      const overview = document.getElementById("match-overview");
+
+      if (!data.response.length) {
+        overview.innerHTML = `<p class="text-gray-400">No events available for this match.</p>`;
+        return;
+      }
+
+      overview.innerHTML = `
+        <h3 class="text-xl font-semibold mb-3">📋 Match Overview</h3>
+        <div class="space-y-2">
+          ${data.response.map(ev => `
+            <div class="bg-gray-800 p-3 rounded-lg">
+              <p><span class="text-green-400">${ev.time.elapsed}'</span> - 
+              <span class="font-bold">${ev.team.name}</span> 
+              ${ev.type === "Goal" ? `⚽ Goal by ${ev.player.name}` : ""}
+              ${ev.type === "Card" ? (ev.detail === "Yellow Card" ? "🟨 Yellow Card" : "🔴 Red Card") + ` for ${ev.player.name}` : ""}
+              ${ev.type === "subst" ? `🔄 Substitution: ${ev.assist.name} ➝ ${ev.player.name}` : ""}
+              ${ev.type === "Var" ? `🖥️ VAR Decision: ${ev.detail}` : ""}
+              </p>
+            </div>
+          `).join("")}
+        </div>`;
+    }
+
     // Init
     loadFixtures(leagues.premier, 
       document.getElementById("prem-fixtures"),
@@ -91,6 +145,14 @@
       document.getElementById("la-results"),
       document.getElementById("la-standings")
     );
+    loadLive(leagues.premier); 
+    loadLive(leagues.laLiga); 
+
+    // Refresh live matches every 30s
+    setInterval(() => {
+      loadLive(leagues.premier);
+      loadLive(leagues.laLiga);
+    }, 30000);
 
     // Search filter
     document.getElementById("search").addEventListener("input", e => {
