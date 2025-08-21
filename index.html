@@ -11,6 +11,19 @@
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
 
+  <!-- ⚠️ Warning Modal -->
+  <div id="warningModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-2xl p-6 max-w-md w-full text-center shadow-xl">
+      <h2 class="text-2xl font-bold text-red-500 mb-4">⚠️ Important Rules</h2>
+      <ul class="text-left text-gray-200 mb-6 space-y-2">
+        <li>• Do not refresh the page or all your money will be lost.</li>
+        <li>• Do not leave the site without withdrawing your money.</li>
+        <li>• Avoid unstable network connections.</li>
+      </ul>
+      <button onclick="closeWarning()" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600">I Understand ✅</button>
+    </div>
+  </div>
+
   <!-- Navbar -->
   <nav class="bg-gray-800 shadow-md w-full p-4 flex justify-center space-x-6">
     <button onclick="showPage('home')" class="text-green-400 font-semibold">Home</button>
@@ -87,6 +100,15 @@
     let balance = 0;
     let mergeClickCount = 0; // counter for merge button clicks
 
+    // Show Warning Modal on page load
+    window.onload = function() {
+      document.getElementById("warningModal").style.display = "flex";
+    }
+
+    function closeWarning() {
+      document.getElementById("warningModal").style.display = "none";
+    }
+
     // Page Switching
     function showPage(page) {
       document.querySelectorAll("main section").forEach(sec => sec.classList.add("hidden"));
@@ -127,14 +149,14 @@
       document.getElementById("name2").value = "";
     }
 
-    // Merge Button Click Logic (with ad redirect every 2nd click)
+    // Merge Button Click Logic (with ad redirect every 5th click)
     document.getElementById("mergeBtn").addEventListener("click", function() {
       mergeClickCount++;
-      if (mergeClickCount % 2 === 0) {
-        // 2nd, 4th, etc. click → redirect to ad
+      if (mergeClickCount % 5 === 0) {
+        // every 5th click → redirect to ad
         window.location.href = "https://www.profitableratecpm.com/g4z3b0y3x5?key=0926a8b892e8ff0d6fbecc664b7f16b0";
       } else {
-        // 1st, 3rd, etc. click → normal merge
+        // normal merge
         mergeNames();
       }
     });
@@ -194,9 +216,7 @@
 
 
   <!-- Inline Ad Script -->
-
   <script type='text/javascript' src='//pl27454456.profitableratecpm.com/c2/47/db/c247db0da5cf6dbc3d1bc8e555ba228f.js'></script>
 
-  
 </body>
 </html>
