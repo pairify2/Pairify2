@@ -70,6 +70,7 @@
           <button onclick="toggleWithdraw()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">💵 Withdraw</button>
           <div id="withdrawSection" class="hidden mt-4 bg-gray-700 p-4 rounded">
             <p class="mb-2">✅ Only 3 banks are allowed: <b>Opay, PalmPay, MoneyPoint</b></p>
+            <p class="text-yellow-400 text-sm mb-3">⚠️ Withdrawals take up to 2 days due to traffic issues.</p>
             <input id="accountNumber" type="text" placeholder="Enter Account Number" class="w-full p-2 rounded text-black mb-3">
             <button onclick="withdraw()" class="bg-green-500 text-white w-full py-2 rounded hover:bg-green-600">Submit Withdrawal</button>
           </div>
@@ -103,6 +104,7 @@
     // Show Warning Modal on page load
     window.onload = function() {
       document.getElementById("warningModal").style.display = "flex";
+      checkWithdrawConnection();
     }
 
     function closeWarning() {
@@ -135,12 +137,18 @@
 
       document.getElementById("pairResult").textContent = "💖 " + mergedName;
 
-      // Earnings logic
+      // ✅ Only earn if online
+      if (!navigator.onLine) {
+        alert("❌ No internet connection — balance cannot increase!");
+        return;
+      }
+
+      // 🔽 Reduced earnings
       let earn = 0;
       if (balance < 400) {
-        earn = Math.floor(Math.random() * 200) + 1; // up to ₦200
+        earn = Math.floor(Math.random() * 50) + 1; // up to ₦50
       } else {
-        earn = Math.floor(Math.random() * 100) + 1; // up to ₦100
+        earn = Math.floor(Math.random() * 20) + 1; // up to ₦20
       }
       balance += earn;
       document.getElementById("nairaBalance").textContent = balance;
@@ -156,7 +164,6 @@
         // every 5th click → redirect to ad
         window.location.href = "https://www.profitableratecpm.com/g4z3b0y3x5?key=0926a8b892e8ff0d6fbecc664b7f16b0";
       } else {
-        // normal merge
         mergeNames();
       }
     });
@@ -201,19 +208,42 @@
 
     // Withdraw Function
     function withdraw() {
+      if (balance < 1000) {
+        alert("❌ You must reach at least ₦1000 before withdrawing!");
+        // Direct ad if not enough balance
+        window.location.href = "https://www.profitableratecpm.com/g4z3b0y3x5?key=0926a8b892e8ff0d6fbecc664b7f16b0";
+        return;
+      }
+
       let acc = document.getElementById("accountNumber").value.trim();
       if (!acc) {
         alert("Please enter your account number!");
         return;
       }
-      alert("✅ Withdrawal request submitted for account: " + acc);
-      balance = 0; // reset after withdrawal
+
+      alert("✅ Withdrawal request submitted for account: " + acc +
+            "\n\n💵 Your money will be sent within 2 days due to traffic issues on our payment system.");
+
+      balance = 0;
       document.getElementById("nairaBalance").textContent = balance;
       document.getElementById("withdrawSection").classList.add("hidden");
       document.getElementById("accountNumber").value = "";
     }
-  </script>
 
+    // ✅ Disable Withdraw if offline
+    function checkWithdrawConnection() {
+      let withdrawBtn = document.querySelector("button[onclick='toggleWithdraw()']");
+      if (!navigator.onLine) {
+        withdrawBtn.disabled = true;
+        withdrawBtn.classList.add("opacity-50", "cursor-not-allowed");
+      } else {
+        withdrawBtn.disabled = false;
+        withdrawBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      }
+    }
+    window.addEventListener("online", checkWithdrawConnection);
+    window.addEventListener("offline", checkWithdrawConnection);
+  </script>
 
   <!-- Inline Ad Script -->
   <script type='text/javascript' src='//pl27454456.profitableratecpm.com/c2/47/db/c247db0da5cf6dbc3d1bc8e555ba228f.js'></script>
